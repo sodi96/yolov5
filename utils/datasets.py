@@ -121,6 +121,7 @@ class _RepeatSampler(object):
 
 class LoadImages:  # for inference
     def __init__(self, path, img_size=640, stride=32):
+        self.iter_time = 0
         p = str(Path(path).absolute())  # os-agnostic absolute path
         if '*' in p:
             files = sorted(glob.glob(p, recursive=True))  # glob
@@ -156,7 +157,7 @@ class LoadImages:  # for inference
         if self.count == self.nf:
             raise StopIteration
         path = self.files[self.count]
-
+        t0 = time.time()
         if self.video_flag[self.count]:
             # Read video
             self.mode = 'video'
@@ -172,7 +173,7 @@ class LoadImages:  # for inference
                     ret_val, img0 = self.cap.read()
 
             self.frame += 1
-            print(f'video {self.count + 1}/{self.nf} ({self.frame}/{self.nframes}) {path}: ', end='')
+            print(f'video {self.count + 1}/{self.nf} ({self.frame}/{self.nframes}) {path}: ', end='\r')
 
         else:
             # Read image
@@ -187,7 +188,7 @@ class LoadImages:  # for inference
         # Convert
         img = img[:, :, ::-1].transpose(2, 0, 1)  # BGR to RGB, to 3x416x416
         img = np.ascontiguousarray(img)
-
+        self.iter_time += time.time() - t0
         return path, img, img0, self.cap
 
     def new_video(self, path):
